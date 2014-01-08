@@ -3,15 +3,15 @@
 #
 # (c) Roberto Gambuzzi
 # Creato:          07/01/2014 12:07:30
-# Ultima Modifica: 07/01/2014 12:07:41
+# Ultima Modifica: 08/01/2014 17:33:14
 #
-# v 0.0.1.0
+# v 0.0.1.1
 #
 # file: G:\repo GIT sparsi in giro\github\_sync_\__main__.py
 # auth: Roberto Gambuzzi <gambuzzi@gmail.com>
 # desc:
 #
-# $Id: __main__.py 07/01/2014 12:07:41 Roberto $
+# $Id: __main__.py 08/01/2014 17:33:14 Roberto $
 # --------------
 
 from pprint import pprint
@@ -37,7 +37,10 @@ def do_work(working_dir, ssh_url, name):
     ret = subprocess.call(['git', 'clone', ssh_url])
     if ret == 128:  # already exists
         print "\nGIT PULL\n"
-        os.chdir(os.path.join(working_dir, name))
+        try:
+            os.chdir(os.path.join(working_dir, name))
+        except:
+            return ret
         ret = [subprocess.call(['git', 'fetch', '--all'])]
         ret.append(subprocess.call(['git', 'pull']))
     return ret
@@ -55,6 +58,10 @@ if __name__ == "__main__":
         pprint(config.items(k))
 
     for service in config.sections():
+        try:
+            skip = config.get(service, 'skip').split(',')
+        except ConfigParser.NoOptionError, e:
+            skip = []
         for k, v in config.items(service):
             if k.startswith('user'):
                 user, passwd = v.split(':')
@@ -72,7 +79,8 @@ if __name__ == "__main__":
                     _json = urllib2.urlopen(request)
                     for row in json.load(_json):
                         ssh_url = row['ssh_url']
-                        do_work(working_dir, ssh_url, row['name'])
+                        if row['name'] not in skip:
+                            do_work(working_dir, ssh_url, row['name'])
 
                 elif service == 'bitbucket':
                     request = urllib2.Request("https://bitbucket.org/api/1.0/user/repositories")
@@ -84,5 +92,6 @@ if __name__ == "__main__":
                             #https://gambuzzi@bitbucket.org/webgriffe/drupal_sarchio.git
                             ssh_url = row["resource_uri"].replace('/1.0/repositories/',
                                                                   'https://%s@bitbucket.org/' % v) + '.git'
-                            do_work(working_dir, ssh_url, row['name'])
+                            if row['name'] not in skip:
+                                do_work(working_dir, ssh_url, row['name'])
 
