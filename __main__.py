@@ -48,7 +48,7 @@ def do_work(working_dir, ssh_url, name):
 
 if __name__ == "__main__":
     #clone all git repos of a user
-    os.chdir(os.path.dirname(sys.argv[0]))
+    os.chdir(os.path.dirname(os.path.abspath(sys.argv[0])))
     config = ConfigParser.ConfigParser()
     if os.path.exists('users.ini'):
         config.readfp(open('users.ini'))
